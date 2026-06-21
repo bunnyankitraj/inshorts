@@ -12,7 +12,7 @@ A Spring Boot backend that fetches and organizes news articles from a data sourc
 | Framework | Spring Boot 3.2 |
 | Database | H2 in-memory |
 | ORM | Spring Data JPA + Hibernate |
-| LLM | Google Gemini (`gemini-1.5-flash`) |
+| LLM | Google Gemini (`gemini-3.5-flash`) |
 | Caching | Caffeine (for trending feed) |
 | HTTP Client | Spring WebFlux WebClient |
 | Build | Maven |
@@ -98,10 +98,10 @@ The main entry point. Accepts plain English, uses the LLM to extract intent and 
 **Request:**
 ```json
 {
-  "query": "Latest developments in the Elon Musk Twitter acquisition near Palo Alto",
-  "userLat": 37.4220,
-  "userLon": -122.0840,
-  "radiusKm": 10,
+  "query": "Latest developments near Mumbai",
+  "userLat": 19.0760,
+  "userLon": 72.8777,
+  "radiusKm": 50,
   "limit": 5
 }
 ```
@@ -112,7 +112,7 @@ The main entry point. Accepts plain English, uses the LLM to extract intent and 
 | "Tech news from BBC" | `source` | Fetch from source=BBC |
 | "Sports articles" | `category` | Fetch category=sports |
 | "Top relevant articles" | `score` | Fetch relevance_score ≥ 0.7 |
-| "Elon Musk Twitter news near Palo Alto" | `nearby` + `search` | Nearby articles, text search |
+| "Latest developments near Mumbai" | `nearby` | Nearby articles using user coordinates |
 | "IPL 2025 updates" | `search` | Text search query |
 
 ---
@@ -283,7 +283,7 @@ GEMINI_API_KEY=your_key
 | Property | Default | Description |
 |---|---|---|
 | `server.port` | `8080` | Application port |
-| `llm.gemini.model` | `gemini-1.5-flash` | Gemini model |
+| `llm.gemini.model` | `gemini-3.5-flash` | Gemini model |
 | `trending.cache.ttl-minutes` | `5` | Trending feed cache TTL |
 | `trending.radius.km` | `50` | Default trending search radius |
 | `nearby.default-radius.km` | `10` | Default nearby radius |

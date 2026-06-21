@@ -15,7 +15,7 @@ public class LLMAnalysis {
 
     /**
      * Named entities extracted from the query.
-     * Examples: "Elon Musk", "Twitter", "Palo Alto", "New York Times"
+     * Examples: "Elon Musk", "Twitter", "Mumbai", "New York Times"
      */
     private List<String> entities;
 

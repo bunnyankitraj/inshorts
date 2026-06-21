@@ -59,7 +59,8 @@ public class QueryService {
     private List<ArticleResponse> routeToEndpoint(LLMAnalysis analysis, QueryRequest request, int limit) {
         List<String> intent = analysis.getIntent();
 
-        if (intent.contains("nearby") && request.getUserLat() != null && request.getUserLon() != null) {
+        if (shouldRouteToNearby(intent, request)) {
+            analysis.setIntent(List.of("nearby"));
             double radius = request.getRadiusKm() != null ? request.getRadiusKm() : 10.0;
             log.info("Routing to NEARBY — radius={}km", radius);
             return newsService.getNearby(request.getUserLat(), request.getUserLon(), radius, limit);
@@ -86,6 +87,22 @@ public class QueryService {
 
         log.info("Routing to SEARCH — query={}", analysis.getSearchQuery());
         return newsService.getBySearch(analysis.getSearchQuery(), limit);
+    }
+
+    private boolean shouldRouteToNearby(List<String> intent, QueryRequest request) {
+        if (request.getUserLat() == null || request.getUserLon() == null) {
+            return false;
+        }
+        if (intent.contains("nearby")) {
+            return true;
+        }
+
+        String query = request.getQuery() == null ? "" : request.getQuery().toLowerCase();
+        return query.contains(" near ")
+            || query.startsWith("near ")
+            || query.contains(" nearby")
+            || query.contains(" around ")
+            || query.contains(" local ");
     }
 
     private NewsApiResponse buildResponse(List<ArticleResponse> articles, LLMAnalysis analysis, String originalQuery) {

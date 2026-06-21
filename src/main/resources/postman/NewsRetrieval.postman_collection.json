@@ -35,7 +35,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"Latest developments near Palo Alto\",\n  \"userLat\": 37.4220,\n  \"userLon\": -122.0840,\n  \"radiusKm\": 50,\n  \"limit\": 5\n}",
+              "raw": "{\n  \"query\": \"Latest developments near Mumbai\",\n  \"userLat\": 19.0760,\n  \"userLon\": 72.8777,\n  \"radiusKm\": 50,\n  \"limit\": 5\n}",
               "options": {
                 "raw": {
                   "language": "json"

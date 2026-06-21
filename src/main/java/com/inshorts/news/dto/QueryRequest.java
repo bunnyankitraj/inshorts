@@ -7,7 +7,7 @@ public class QueryRequest {
 
     /**
      * Natural language query from the user.
-     * Example: "Latest developments in the Elon Musk Twitter acquisition near Palo Alto"
+     * Example: "Latest developments near Mumbai"
      */
     private String query;
 
