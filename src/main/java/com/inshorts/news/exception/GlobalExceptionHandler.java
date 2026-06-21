@@ -16,26 +16,6 @@ import java.time.LocalDateTime;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ErrorResponse> handleMissingParam(
-            MissingServletRequestParameterException ex,
-            HttpServletRequest request) {
-        log.warn("Missing parameter: {}", ex.getParameterName());
-        return buildError(HttpStatus.BAD_REQUEST,
-            "Missing required parameter: " + ex.getParameterName(),
-            request.getRequestURI());
-    }
-
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleTypeMismatch(
-            MethodArgumentTypeMismatchException ex,
-            HttpServletRequest request) {
-        log.warn("Type mismatch for param '{}': {}", ex.getName(), ex.getMessage());
-        return buildError(HttpStatus.BAD_REQUEST,
-            "Invalid value for parameter: " + ex.getName(),
-            request.getRequestURI());
-    }
-
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(
             IllegalArgumentException ex,
@@ -56,9 +36,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex,
             HttpServletRequest request) {
-        log.error("Unexpected error at {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+        log.error("Unexpected error at {}: {}", request.getRequestURI(), ex.getMessage());
         return buildError(HttpStatus.INTERNAL_SERVER_ERROR,
-            "An unexpected error occurred. Please try again.",
+            "An unexpected error occurred: " + ex.getMessage(),
             request.getRequestURI());
     }
 

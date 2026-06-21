@@ -205,11 +205,11 @@ GET /api/v1/trending?lat=19.076&lon=72.877&limit=10
 
 **Trending Score Formula:**
 ```
-trending_score = SUM[ event_weight × recency_decay(event_time) ] × geo_proximity_boost
+trending_score = (Volume Weight) + (Recency Bonus) + (Proximity Bonus)
 
-event_weight:       view=1, click=3, share=5
-recency_decay:      1 / (1 + hours_since_event)
-geo_proximity_boost: 1 + (1 / (1 + distance_km))
+Volume Weight:    view=1, click=3, share=5
+Recency Bonus:    +2 if < 24 hrs, +1 if < 48 hrs
+Proximity Bonus:  +5 if <= 10km, +2 if <= 30km
 ```
 
 **Caching:** Results are cached per geospatial cluster (lat/lon rounded to 2 decimal places = ~1.1km grid) with a **5-minute TTL** using Caffeine.

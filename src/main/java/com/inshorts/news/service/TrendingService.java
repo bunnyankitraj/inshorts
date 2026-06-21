@@ -44,11 +44,8 @@ public class TrendingService {
      * Cache key is based on rounded lat/lon (2 decimal places = ~1.1km grid).
      * This simulates geospatial cluster-based caching.
      *
-     * Trending Score Formula:
-     *   score = SUM[ event_weight * recency_decay(event_time) ] * geo_proximity_boost
-     *
-     * recency_decay = 1 / (1 + hours_since_event)
-     * geo_proximity_boost = 1 + (1 / (1 + distance_from_article_to_user_km))
+     * Simplified Trending Score Formula:
+     *   score = (Volume Weight) + (Recency Bonus) + (Proximity Bonus)
      */
     @Cacheable(value = "trendingFeed", key = "#cacheKey")
     public List<ArticleResponse> getTrendingByLocation(double lat, double lon, int limit, String cacheKey) {
@@ -79,15 +76,17 @@ public class TrendingService {
         LocalDateTime now = LocalDateTime.now();
 
         for (UserEvent event : recentEvents) {
-            double weight = EVENT_WEIGHTS.getOrDefault(event.getEventType(), 1.0);
+            // Factor 1: Volume and Type
+            double baseWeight = EVENT_WEIGHTS.getOrDefault(event.getEventType(), 1.0);
+            
+            // Factor 2: Recency (Simple bonus: +2 if today, +1 if yesterday)
             long hoursAgo = ChronoUnit.HOURS.between(event.getEventTime(), now);
-            double recencyDecay = 1.0 / (1.0 + hoursAgo);
-            double rawScore = weight * recencyDecay;
-
-            articleScores.merge(event.getArticleId(), rawScore, Double::sum);
+            double recencyBonus = hoursAgo <= 24 ? 2.0 : 1.0;
+            
+            articleScores.merge(event.getArticleId(), baseWeight + recencyBonus, Double::sum);
         }
 
-        // Fetch articles, apply geo proximity boost
+        // Fetch articles, apply geo proximity bonus
         List<Article> allArticles = articleRepository.findAllById(articleScores.keySet());
         Map<String, Article> articleMap = allArticles.stream()
             .collect(Collectors.toMap(Article::getId, a -> a));
@@ -96,11 +95,14 @@ public class TrendingService {
             .filter(e -> articleMap.containsKey(e.getKey()))
             .map(e -> {
                 Article article = articleMap.get(e.getKey());
-                double baseScore = e.getValue();
+                double score = e.getValue();
                 double distanceKm = distanceFromUser(article, lat, lon);
-                double geoBoost = computeGeoProximityBoost(distanceKm);
-                double trendingScore = baseScore * geoBoost;
-                return new ArticleWithScore(article, trendingScore, distanceKm);
+                
+                // Factor 3: Geographical relevance (Simple bonus: +5 if very close)
+                if (distanceKm <= 10.0) score += 5.0;
+                else if (distanceKm <= 30.0) score += 2.0;
+                
+                return new ArticleWithScore(article, score, distanceKm);
             })
             .filter(as -> as.distanceKm() <= trendingRadiusKm)
             .sorted(Comparator.comparingDouble(ArticleWithScore::score).reversed())
@@ -135,11 +137,6 @@ public class TrendingService {
         return newsService.haversineDistance(
             userLat, userLon, article.getLatitude(), article.getLongitude()
         );
-    }
-
-    private double computeGeoProximityBoost(double distanceKm) {
-        // Boost: articles close to user get up to 2x multiplier, far ones get ~1x
-        return 1.0 + (1.0 / (1.0 + distanceKm));
     }
 
     private record ArticleWithScore(Article article, double score, double distanceKm) {}
