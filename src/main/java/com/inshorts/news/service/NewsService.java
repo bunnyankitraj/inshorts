@@ -87,12 +87,17 @@ public class NewsService {
         log.info("Fetching nearby articles: lat={}, lon={}, radius={}km", lat, lon, radiusKm);
         double effectiveRadius = radiusKm > 0 ? radiusKm : defaultRadiusKm;
 
-        return articleRepository.findAllWithCoordinates()
-            .stream()
-            .map(a -> {
-                double distanceKm = haversineDistance(lat, lon, a.getLatitude(), a.getLongitude());
-                return new ArticleWithDistance(a, distanceKm);
-            })
+        // Step 1: Bounding box pre-filter in SQL (cheap, index-friendly)
+        double latDelta = effectiveRadius / 111.0;
+        double lonDelta = effectiveRadius / (111.0 * Math.cos(Math.toRadians(lat)));
+        List<Article> candidates = articleRepository.findWithinBoundingBox(
+            lat - latDelta, lat + latDelta,
+            lon - lonDelta, lon + lonDelta
+        );
+
+        // Step 2: Exact Haversine filter + sort in Java (on small candidate set)
+        return candidates.stream()
+            .map(a -> new ArticleWithDistance(a, haversineDistance(lat, lon, a.getLatitude(), a.getLongitude())))
             .filter(ad -> ad.distanceKm <= effectiveRadius)
             .sorted(Comparator.comparingDouble(ad -> ad.distanceKm))
             .limit(limit)

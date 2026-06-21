@@ -49,7 +49,7 @@ public class QueryService {
         List<ArticleResponse> enriched = enrichmentService.enrichWithSummaries(articles);
 
         // Step 4: Build structured response
-        return buildResponse(enriched, analysis, request.getQuery());
+        return buildResponse(enriched, analysis, request, request.getQuery());
     }
 
     /**
@@ -88,7 +88,8 @@ public class QueryService {
         return newsService.getBySearch(analysis.getSearchQuery(), limit);
     }
 
-    private NewsApiResponse buildResponse(List<ArticleResponse> articles, LLMAnalysis analysis, String originalQuery) {
+    private NewsApiResponse buildResponse(List<ArticleResponse> articles, LLMAnalysis analysis,
+                                          QueryRequest request, String originalQuery) {
         return NewsApiResponse.builder()
             .metadata(NewsApiResponse.Metadata.builder()
                 .totalResults(articles.size())
@@ -96,10 +97,22 @@ public class QueryService {
                 .queryUsed(originalQuery)
                 .intent(analysis.getIntent())
                 .entities(analysis.getEntities())
-                .endpoint(analysis.getIntent() != null && !analysis.getIntent().isEmpty()
-                    ? analysis.getIntent().get(0) : "search")
+                .endpoint(resolveEndpoint(analysis, request))
                 .build())
             .articles(articles)
             .build();
+    }
+
+    /**
+     * Determines the actual endpoint used, mirroring the routing priority in routeToEndpoint.
+     */
+    private String resolveEndpoint(LLMAnalysis analysis, QueryRequest request) {
+        List<String> intent = analysis.getIntent();
+        if (intent == null || intent.isEmpty()) return "search";
+        if (intent.contains("nearby") && request.getUserLat() != null && request.getUserLon() != null) return "nearby";
+        if (intent.contains("source")) return "source";
+        if (intent.contains("category")) return "category";
+        if (intent.contains("score")) return "score";
+        return "search";
     }
 }

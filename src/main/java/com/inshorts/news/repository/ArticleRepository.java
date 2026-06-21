@@ -30,7 +30,14 @@ public interface ArticleRepository extends JpaRepository<Article, String> {
            "ORDER BY a.relevanceScore DESC")
     List<Article> findByTextSearch(@Param("query") String query);
 
-    // ---- nearby endpoint — fetch all with coords, distance computed in service ----
-    @Query("SELECT a FROM Article a WHERE a.latitude IS NOT NULL AND a.longitude IS NOT NULL")
-    List<Article> findAllWithCoordinates();
+    // ---- nearby endpoint — bounding box pre-filter, exact Haversine applied in service ----
+    @Query("SELECT a FROM Article a WHERE " +
+           "a.latitude IS NOT NULL AND a.longitude IS NOT NULL AND " +
+           "a.latitude BETWEEN :latMin AND :latMax AND " +
+           "a.longitude BETWEEN :lonMin AND :lonMax")
+    List<Article> findWithinBoundingBox(
+        @Param("latMin") double latMin,
+        @Param("latMax") double latMax,
+        @Param("lonMin") double lonMin,
+        @Param("lonMax") double lonMax);
 }
