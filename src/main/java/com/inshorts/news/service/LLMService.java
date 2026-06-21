@@ -136,6 +136,12 @@ public class LLMService {
                     e
                 );
             }
+            if (e.getStatusCode().value() == 429) {
+                throw new IllegalStateException(
+                    "Gemini rate limit exceeded (429). Wait before retrying or reduce LLM requests. Response: " + responseBody,
+                    e
+                );
+            }
             throw e;
         }
     }
