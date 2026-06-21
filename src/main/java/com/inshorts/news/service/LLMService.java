@@ -22,14 +22,14 @@ public class LLMService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${llm.gemini.api-key}")
-    private String geminiApiKey;
+    @Value("${llm.openai.api-key}")
+    private String openaiApiKey;
 
-    @Value("${llm.gemini.model}")
-    private String geminiModel;
+    @Value("${llm.openai.model}")
+    private String openaiModel;
 
-    @Value("${llm.gemini.base-url}")
-    private String geminiBaseUrl;
+    @Value("${llm.openai.base-url}")
+    private String openaiBaseUrl;
 
     public LLMService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
         this.webClient = webClientBuilder.build();
@@ -84,10 +84,10 @@ public class LLMService {
     // =========================================================================
 
     private String callLLM(String prompt) {
-        if (isMissingApiKey(geminiApiKey, "your-gemini-api-key-here")) {
-            throw new IllegalStateException("Gemini API key is not configured");
+        if (isMissingApiKey(openaiApiKey, "your-openai-api-key-here")) {
+            throw new IllegalStateException("OpenAI API key is not configured");
         }
-        return callGemini(prompt);
+        return callOpenAI(prompt);
     }
 
     private boolean isMissingApiKey(String apiKey, String placeholder) {
@@ -95,50 +95,50 @@ public class LLMService {
     }
 
     // =========================================================================
-    // Google Gemini Integration
+    // OpenAI Integration
     // =========================================================================
 
-    private String callGemini(String prompt) {
-        String url = String.format("%s/models/%s:generateContent", geminiBaseUrl, geminiModel);
+    private String callOpenAI(String prompt) {
+        String url = String.format("%s/chat/completions", openaiBaseUrl);
 
         Map<String, Object> requestBody = Map.of(
-            "contents", List.of(Map.of(
-                "parts", List.of(Map.of("text", prompt))
+            "model", openaiModel,
+            "messages", List.of(Map.of(
+                "role", "user",
+                "content", prompt
             )),
-            "generationConfig", Map.of(
-                "temperature", 0.1,
-                "maxOutputTokens", 512
-            )
+            "temperature", 0.1,
+            "max_tokens", 512
         );
 
         try {
             String responseBody = webClient.post()
                 .uri(url)
-                .header("x-goog-api-key", geminiApiKey)
+                .header("Authorization", "Bearer " + openaiApiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
 
-            return extractGeminiText(responseBody);
+            return extractOpenAIText(responseBody);
         } catch (WebClientResponseException e) {
             String responseBody = e.getResponseBodyAsString();
-            if (e.getStatusCode().value() == 403) {
+            if (e.getStatusCode().value() == 401 || e.getStatusCode().value() == 403) {
                 throw new IllegalStateException(
-                    "Gemini API key was rejected (403). Verify GEMINI_API_KEY, API enablement, key restrictions, and model access. Response: " + responseBody,
+                    "OpenAI API key was rejected (" + e.getStatusCode().value() + "). Verify OPENAI_API_KEY. Response: " + responseBody,
                     e
                 );
             }
             if (e.getStatusCode().value() == 404) {
                 throw new IllegalStateException(
-                    "Gemini model '" + geminiModel + "' was not found. Check llm.gemini.model. Response: " + responseBody,
+                    "OpenAI model '" + openaiModel + "' was not found. Check llm.openai.model. Response: " + responseBody,
                     e
                 );
             }
             if (e.getStatusCode().value() == 429) {
                 throw new IllegalStateException(
-                    "Gemini rate limit exceeded (429). Wait before retrying or reduce LLM requests. Response: " + responseBody,
+                    "OpenAI rate limit exceeded (429). Wait before retrying or reduce LLM requests. Response: " + responseBody,
                     e
                 );
             }
@@ -146,19 +146,17 @@ public class LLMService {
         }
     }
 
-    private String extractGeminiText(String responseBody) {
+    private String extractOpenAIText(String responseBody) {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
-            return root.path("candidates")
+            return root.path("choices")
                 .get(0)
+                .path("message")
                 .path("content")
-                .path("parts")
-                .get(0)
-                .path("text")
                 .asText();
         } catch (Exception e) {
-            log.error("Failed to parse Gemini response: {}", responseBody);
-            throw new RuntimeException("Failed to parse Gemini response", e);
+            log.error("Failed to parse OpenAI response: {}", responseBody);
+            throw new RuntimeException("Failed to parse OpenAI response", e);
         }
     }
 

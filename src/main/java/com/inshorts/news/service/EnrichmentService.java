@@ -3,7 +3,6 @@ package com.inshorts.news.service;
 import com.inshorts.news.dto.ArticleResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,16 +14,13 @@ public class EnrichmentService {
 
     private final LLMService llmService;
 
-    @Value("${llm.summary.delay-ms:300}")
-    private long summaryDelayMs;
-
     /**
-     * Enriches articles with LLM summaries one-by-one to avoid Gemini rate limits.
+     * Enriches articles with LLM summaries in parallel for maximum speed.
      */
     public List<ArticleResponse> enrichWithSummaries(List<ArticleResponse> articles) {
-        log.info("Enriching {} articles with LLM summaries...", articles.size());
+        log.info("Enriching {} articles with LLM summaries (in parallel)...", articles.size());
 
-        for (ArticleResponse article : articles) {
+        articles.parallelStream().forEach(article -> {
             try {
                 String summary = llmService.generateSummary(
                     article.getTitle(),
@@ -35,25 +31,11 @@ public class EnrichmentService {
                 log.warn("Could not generate summary for article '{}': {}",
                     article.getTitle(), e.getMessage());
                 article.setLlmSummary(fallbackSummary(article.getDescription()));
-            } finally {
-                pauseBetweenSummaryCalls();
             }
-        }
+        });
 
         log.info("Enrichment complete for {} articles.", articles.size());
         return articles;
-    }
-
-    private void pauseBetweenSummaryCalls() {
-        if (summaryDelayMs <= 0) {
-            return;
-        }
-
-        try {
-            Thread.sleep(summaryDelayMs);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 
     private String fallbackSummary(String description) {

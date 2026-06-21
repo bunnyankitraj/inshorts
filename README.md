@@ -1,6 +1,6 @@
 # 📰 Contextual News Data Retrieval System
 
-A Spring Boot backend that fetches and organizes news articles from a data source, uses **Google Gemini** to understand natural language queries, routes them to the correct retrieval strategy, enriches results with AI-generated summaries, and returns structured JSON responses.
+A Spring Boot backend that fetches and organizes news articles from a data source, uses **OpenAI** to understand natural language queries, routes them to the correct retrieval strategy, enriches results with AI-generated summaries, and returns structured JSON responses.
 
 ---
 
@@ -12,7 +12,7 @@ A Spring Boot backend that fetches and organizes news articles from a data sourc
 | Framework | Spring Boot 3.2 |
 | Database | H2 in-memory |
 | ORM | Spring Data JPA + Hibernate |
-| LLM | Google Gemini (`gemini-3.5-flash`) |
+| LLM | OpenAI (`gpt-4o-mini`) |
 | Caching | Caffeine (for trending feed) |
 | HTTP Client | Spring WebFlux WebClient |
 | Build | Maven |
@@ -36,7 +36,7 @@ cd /path/to/Inshorts
 Create a local `.env` file in the project root:
 
 ```properties
-GEMINI_API_KEY=your_gemini_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
 The `.env` file is ignored by git.
@@ -278,16 +278,16 @@ All errors return consistent JSON:
 
 ## ⚙️ Configuration
 
-### Gemini (`application.properties`)
+### OpenAI (`application.properties`)
 ```properties
-GEMINI_API_KEY=your_key
+OPENAI_API_KEY=your_key
 ```
 
 ### Key configuration properties
 | Property | Default | Description |
 |---|---|---|
 | `server.port` | `8080` | Application port |
-| `llm.gemini.model` | `gemini-3.5-flash` | Gemini model |
+| `llm.openai.model` | `gpt-4o-mini` | OpenAI model |
 | `trending.cache.ttl-minutes` | `5` | Trending feed cache TTL |
 | `trending.radius.km` | `50` | Default trending search radius |
 | `nearby.default-radius.km` | `10` | Default nearby radius |
@@ -338,7 +338,7 @@ curl "http://localhost:8080/api/v1/news/nearby?lat=19.076&lon=72.877&radius=50&l
 # 6. Trending (Mumbai)
 curl "http://localhost:8080/api/v1/trending?lat=19.076&lon=72.877&limit=10"
 
-# 7. LLM natural language query (requires GEMINI_API_KEY)
+# 7. LLM natural language query (requires OPENAI_API_KEY)
 curl -X POST http://localhost:8080/api/v1/query \
   -H "Content-Type: application/json" \
   -d '{
