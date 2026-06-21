@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,8 +99,7 @@ public class LLMService {
     // =========================================================================
 
     private String callGemini(String prompt) {
-        String url = String.format("%s/models/%s:generateContent?key=%s",
-            geminiBaseUrl, geminiModel, geminiApiKey);
+        String url = String.format("%s/models/%s:generateContent", geminiBaseUrl, geminiModel);
 
         Map<String, Object> requestBody = Map.of(
             "contents", List.of(Map.of(
@@ -111,15 +111,33 @@ public class LLMService {
             )
         );
 
-        String responseBody = webClient.post()
-            .uri(url)
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(requestBody)
-            .retrieve()
-            .bodyToMono(String.class)
-            .block();
+        try {
+            String responseBody = webClient.post()
+                .uri(url)
+                .header("x-goog-api-key", geminiApiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
 
-        return extractGeminiText(responseBody);
+            return extractGeminiText(responseBody);
+        } catch (WebClientResponseException e) {
+            String responseBody = e.getResponseBodyAsString();
+            if (e.getStatusCode().value() == 403) {
+                throw new IllegalStateException(
+                    "Gemini API key was rejected (403). Verify GEMINI_API_KEY, API enablement, key restrictions, and model access. Response: " + responseBody,
+                    e
+                );
+            }
+            if (e.getStatusCode().value() == 404) {
+                throw new IllegalStateException(
+                    "Gemini model '" + geminiModel + "' was not found. Check llm.gemini.model. Response: " + responseBody,
+                    e
+                );
+            }
+            throw e;
+        }
     }
 
     private String extractGeminiText(String responseBody) {

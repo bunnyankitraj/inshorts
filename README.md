@@ -33,9 +33,13 @@ cd /path/to/Inshorts
 ```
 
 ### 2. Add your LLM API key
-```bash
-export GEMINI_API_KEY=your_gemini_api_key_here
+Create a local `.env` file in the project root:
+
+```properties
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
+
+The `.env` file is ignored by git.
 
 ### 3. Run the application
 ```bash
