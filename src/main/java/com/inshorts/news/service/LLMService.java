@@ -21,9 +21,6 @@ public class LLMService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${llm.provider}")
-    private String llmProvider;
-
     @Value("${llm.gemini.api-key}")
     private String geminiApiKey;
 
@@ -32,15 +29,6 @@ public class LLMService {
 
     @Value("${llm.gemini.base-url}")
     private String geminiBaseUrl;
-
-    @Value("${llm.openai.api-key}")
-    private String openaiApiKey;
-
-    @Value("${llm.openai.model}")
-    private String openaiModel;
-
-    @Value("${llm.openai.base-url}")
-    private String openaiBaseUrl;
 
     public LLMService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
         this.webClient = webClientBuilder.build();
@@ -95,13 +83,6 @@ public class LLMService {
     // =========================================================================
 
     private String callLLM(String prompt) {
-        if ("openai".equalsIgnoreCase(llmProvider)) {
-            if (isMissingApiKey(openaiApiKey, "your-openai-api-key-here")) {
-                throw new IllegalStateException("OpenAI API key is not configured");
-            }
-            return callOpenAI(prompt);
-        }
-
         if (isMissingApiKey(geminiApiKey, "your-gemini-api-key-here")) {
             throw new IllegalStateException("Gemini API key is not configured");
         }
@@ -154,49 +135,6 @@ public class LLMService {
         } catch (Exception e) {
             log.error("Failed to parse Gemini response: {}", responseBody);
             throw new RuntimeException("Failed to parse Gemini response", e);
-        }
-    }
-
-    // =========================================================================
-    // OpenAI Integration
-    // =========================================================================
-
-    private String callOpenAI(String prompt) {
-        String url = openaiBaseUrl + "/chat/completions";
-
-        Map<String, Object> requestBody = Map.of(
-            "model", openaiModel,
-            "messages", List.of(Map.of(
-                "role", "user",
-                "content", prompt
-            )),
-            "temperature", 0.1,
-            "max_tokens", 512
-        );
-
-        String responseBody = webClient.post()
-            .uri(url)
-            .header("Authorization", "Bearer " + openaiApiKey)
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(requestBody)
-            .retrieve()
-            .bodyToMono(String.class)
-            .block();
-
-        return extractOpenAIText(responseBody);
-    }
-
-    private String extractOpenAIText(String responseBody) {
-        try {
-            JsonNode root = objectMapper.readTree(responseBody);
-            return root.path("choices")
-                .get(0)
-                .path("message")
-                .path("content")
-                .asText();
-        } catch (Exception e) {
-            log.error("Failed to parse OpenAI response: {}", responseBody);
-            throw new RuntimeException("Failed to parse OpenAI response", e);
         }
     }
 

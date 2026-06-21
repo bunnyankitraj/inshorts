@@ -21,7 +21,7 @@
   "item": [
     {
       "name": "🤖 LLM Query (Natural Language)",
-      "description": "POST /api/v1/query\n\nThe main entry point. Send a plain English query. The LLM extracts entities + intent, routes to the right retrieval strategy, and enriches results with AI summaries.\n\nRequires GEMINI_API_KEY or OPENAI_API_KEY to be set.",
+      "description": "POST /api/v1/query\n\nThe main entry point. Send a plain English query. The LLM extracts entities + intent, routes to the right retrieval strategy, and enriches results with AI summaries.\n\nRequires GEMINI_API_KEY to be set.",
       "item": [
         {
           "name": "Query — Nearby (with location)",

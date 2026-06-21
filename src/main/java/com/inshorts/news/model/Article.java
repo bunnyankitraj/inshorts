@@ -36,7 +36,6 @@ public class Article {
 
     /**
      * Stored as a comma-separated string for H2 compatibility.
-     * For PostgreSQL, switch to @JdbcTypeCode(SqlTypes.ARRAY).
      */
     @Column(name = "category", columnDefinition = "TEXT")
     private String categoryRaw; // e.g. "Technology,Business"

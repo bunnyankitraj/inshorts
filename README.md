@@ -1,6 +1,6 @@
 # 📰 Contextual News Data Retrieval System
 
-A Spring Boot backend that fetches and organizes news articles from a data source, uses an **LLM (Google Gemini / OpenAI)** to understand natural language queries, routes them to the correct retrieval strategy, enriches results with AI-generated summaries, and returns structured JSON responses.
+A Spring Boot backend that fetches and organizes news articles from a data source, uses **Google Gemini** to understand natural language queries, routes them to the correct retrieval strategy, enriches results with AI-generated summaries, and returns structured JSON responses.
 
 ---
 
@@ -10,9 +10,9 @@ A Spring Boot backend that fetches and organizes news articles from a data sourc
 |---|---|
 | Language | Java 21 |
 | Framework | Spring Boot 3.2 |
-| Database | H2 (in-memory, default) / PostgreSQL |
+| Database | H2 in-memory |
 | ORM | Spring Data JPA + Hibernate |
-| LLM | Google Gemini (`gemini-1.5-flash`) or OpenAI (`gpt-4o-mini`) |
+| LLM | Google Gemini (`gemini-1.5-flash`) |
 | Caching | Caffeine (for trending feed) |
 | HTTP Client | Spring WebFlux WebClient |
 | Build | Maven |
@@ -24,7 +24,6 @@ A Spring Boot backend that fetches and organizes news articles from a data sourc
 ### Prerequisites
 - Java 21+
 - Maven 3.9+
-- (Optional) PostgreSQL — only if switching from H2
 
 If multiple JDKs are installed, make sure Maven is using Java 21.
 
@@ -35,11 +34,7 @@ cd /path/to/Inshorts
 
 ### 2. Add your LLM API key
 ```bash
-# For Google Gemini (default):
 export GEMINI_API_KEY=your_gemini_api_key_here
-
-# OR for OpenAI — also change llm.provider=openai in application.properties:
-export OPENAI_API_KEY=your_openai_api_key_here
 ```
 
 ### 3. Run the application
@@ -67,7 +62,7 @@ src/main/java/com/inshorts/news/
 │   └── TrendingController.java     # GET /api/v1/trending
 ├── service/
 │   ├── DataIngestionService.java   # Loads news_data.json on startup
-│   ├── LLMService.java             # Gemini/OpenAI calls, query analysis & summaries
+│   ├── LLMService.java             # Gemini calls, query analysis & summaries
 │   ├── NewsService.java            # 5 retrieval strategies + Haversine formula
 │   ├── EnrichmentService.java      # Parallel LLM summary generation
 │   └── TrendingService.java        # Trending score computation + geo caching
@@ -279,33 +274,15 @@ All errors return consistent JSON:
 
 ## ⚙️ Configuration
 
-### Switch LLM provider (`application.properties`)
+### Gemini (`application.properties`)
 ```properties
-# Use Gemini (default):
-llm.provider=gemini
 GEMINI_API_KEY=your_key
-
-# Or switch to OpenAI:
-llm.provider=openai
-OPENAI_API_KEY=your_key
-```
-
-### Switch to PostgreSQL
-```properties
-# In application.properties:
-spring.profiles.active=postgres
-
-# Set env vars:
-export DB_USERNAME=postgres
-export DB_PASSWORD=your_password
-# Ensure a database named 'newsdb' exists on localhost:5432
 ```
 
 ### Key configuration properties
 | Property | Default | Description |
 |---|---|---|
 | `server.port` | `8080` | Application port |
-| `llm.provider` | `gemini` | LLM to use: `gemini` or `openai` |
 | `llm.gemini.model` | `gemini-1.5-flash` | Gemini model |
 | `trending.cache.ttl-minutes` | `5` | Trending feed cache TTL |
 | `trending.radius.km` | `50` | Default trending search radius |
