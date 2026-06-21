@@ -141,24 +141,9 @@ public class NewsService {
     // =========================================================================
 
     private double computeTextMatchScore(Article article, String queryLower) {
-        String titleLower = article.getTitle() != null ? article.getTitle().toLowerCase() : "";
-        String descLower = article.getDescription() != null ? article.getDescription().toLowerCase() : "";
-
-        String[] terms = queryLower.split("\\s+");
-        long titleMatches = 0, descMatches = 0;
-
-        for (String term : terms) {
-            if (term.length() >= 3) {
-                if (titleLower.contains(term)) titleMatches++;
-                if (descLower.contains(term)) descMatches++;
-            }
-        }
-
-        int totalTerms = terms.length;
-        if (totalTerms == 0) return 0.0;
-
-        // Title matches worth more than description
-        return Math.min(1.0, (titleMatches * 1.5 + descMatches * 0.5) / totalTerms);
+        boolean titleMatch = article.getTitle() != null && article.getTitle().toLowerCase().contains(queryLower);
+        boolean descMatch = article.getDescription() != null && article.getDescription().toLowerCase().contains(queryLower);
+        return titleMatch ? 1.0 : (descMatch ? 0.5 : 0.0);
     }
 
     private double safeScore(Double score) {

@@ -62,11 +62,4 @@ public class Article {
         }
     }
 
-    @PrePersist
-    @PreUpdate
-    public void syncRawFromCategory() {
-        if (category != null && !category.isEmpty()) {
-            this.categoryRaw = String.join(",", category);
-        }
-    }
 }
