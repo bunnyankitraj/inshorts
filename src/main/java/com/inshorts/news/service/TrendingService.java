@@ -65,7 +65,12 @@ public class TrendingService {
                 .stream()
                 .filter(article -> distanceFromUser(article, lat, lon) <= trendingRadiusKm)
                 .limit(effectiveLimit)
-                .map(newsService::toResponse)
+                .map(article -> {
+                    ArticleResponse resp = newsService.toResponse(article);
+                    double dist = distanceFromUser(article, lat, lon);
+                    resp.setDistanceKm(Math.round(dist * 100.0) / 100.0);
+                    return resp;
+                })
                 .collect(Collectors.toList());
         }
 
@@ -103,6 +108,7 @@ public class TrendingService {
             .map(as -> {
                 ArticleResponse resp = newsService.toResponse(as.article());
                 resp.setRelevanceScore(Math.round(as.score() * 100.0) / 100.0);
+                resp.setDistanceKm(Math.round(as.distanceKm() * 100.0) / 100.0);
                 return resp;
             })
             .collect(Collectors.toList());
