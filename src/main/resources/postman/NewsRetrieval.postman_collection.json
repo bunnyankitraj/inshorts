@@ -1,16 +1,15 @@
 {
   "info": {
-    "name": "Contextual News Data Retrieval System",
-    "description": "A complete collection for the Inshorts News Retrieval API. Covers all 7 endpoints: LLM-driven query, category, score, search, source, nearby, and trending feed.\n\n**Base URL:** http://localhost:8080\n\n**Setup:**\n1. Run the Spring Boot app: `JAVA_HOME=$(/usr/libexec/java_home -v 21) mvn spring-boot:run`\n2. Set `GEMINI_API_KEY` env variable for real LLM summaries\n3. Use the collection variables below to switch base URL easily",
+    "name": "Inshorts News Retrieval API",
+    "description": "Minimal Postman collection for the APIs implemented in this Spring Boot project.\n\nBase URL: http://localhost:8080\n\nSetup:\n1. Start the app: JAVA_HOME=$(/usr/libexec/java_home -v 21) mvn spring-boot:run\n2. Optional: put GEMINI_API_KEY in .env for Gemini summaries and query analysis.\n\nThis collection intentionally includes only one request per implemented controller endpoint.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_postman_id": "inshorts-news-api-v1"
+    "_postman_id": "inshorts-news-api-minimal-v1"
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "http://localhost:8080",
-      "type": "string",
-      "description": "Base URL of the running Spring Boot application"
+      "type": "string"
     },
     {
       "key": "defaultLimit",
@@ -20,796 +19,235 @@
   ],
   "item": [
     {
-      "name": "🤖 LLM Query (Natural Language)",
-      "description": "POST /api/v1/query\n\nThe main entry point. Send a plain English query. The LLM extracts entities + intent, routes to the right retrieval strategy, and enriches results with AI summaries.\n\nRequires GEMINI_API_KEY to be set.",
-      "item": [
-        {
-          "name": "Query — Nearby (with location)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"query\": \"Latest developments near Mumbai\",\n  \"userLat\": 19.0760,\n  \"userLon\": 72.8777,\n  \"radiusKm\": 50,\n  \"limit\": 5\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/query",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "query"]
-            },
-            "description": "LLM detects intent: 'nearby'. Routes to the nearby endpoint using user coordinates."
-          },
-          "response": []
+      "name": "POST /api/v1/query",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"Latest developments near Mumbai\",\n  \"userLat\": 19.0760,\n  \"userLon\": 72.8777,\n  \"radiusKm\": 50,\n  \"limit\": 5\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
         },
-        {
-          "name": "Query — Source Intent",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"query\": \"Top technology news from Reuters\",\n  \"limit\": 5\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/query",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "query"]
-            },
-            "description": "LLM detects intent: 'source'. Entities: ['Reuters']. Routes to source endpoint."
-          },
-          "response": []
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/query",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "query"
+          ]
         },
-        {
-          "name": "Query — Category Intent",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"query\": \"Show me the latest sports news\",\n  \"limit\": 5\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/query",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "query"]
-            },
-            "description": "LLM detects intent: 'category'. Entities: ['sports']. Routes to category endpoint."
-          },
-          "response": []
-        },
-        {
-          "name": "Query — Search Intent",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"query\": \"IPL 2025 cricket updates\",\n  \"limit\": 5\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/query",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "query"]
-            },
-            "description": "LLM detects intent: 'search'. Routes to search endpoint with cleaned query."
-          },
-          "response": []
-        },
-        {
-          "name": "Query — Score Intent",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"query\": \"Show me the most relevant and top-ranked articles today\",\n  \"limit\": 5\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/query",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "query"]
-            },
-            "description": "LLM detects intent: 'score'. Routes to score endpoint with threshold 0.7."
-          },
-          "response": []
-        },
-        {
-          "name": "Query — Empty (Error Case)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"query\": \"\",\n  \"limit\": 5\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/query",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "query"]
-            },
-            "description": "Expected: 400 Bad Request — Query must not be empty."
-          },
-          "response": []
-        }
-      ]
+        "description": "Natural language query endpoint. Uses Gemini when GEMINI_API_KEY is configured; otherwise falls back to simple routing/search behavior."
+      },
+      "response": []
     },
     {
-      "name": "📂 Category",
-      "description": "GET /api/v1/news/category\n\nRetrieve articles from a specific category, ranked by publication date (newest first).\n\nAvailable categories: national, world, sports, politics, business, entertainment, technology, health, General, miscellaneous, IPL_2025, Israel-Hamas_War, Russia-Ukraine_Conflict",
-      "item": [
-        {
-          "name": "Category — Sports",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/category?category=sports&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "category"],
-              "query": [
-                { "key": "category", "value": "sports", "description": "Article category to filter by" },
-                { "key": "limit", "value": "{{defaultLimit}}", "description": "Max results (1–50)" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Category — National",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/category?category=national&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "category"],
-              "query": [
-                { "key": "category", "value": "national" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Category — Politics",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/category?category=politics&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "category"],
-              "query": [
-                { "key": "category", "value": "politics" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Category — World",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/category?category=world&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "category"],
-              "query": [
-                { "key": "category", "value": "world" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Category — Business",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/category?category=business&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "category"],
-              "query": [
-                { "key": "category", "value": "business" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Category — Entertainment",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/category?category=entertainment&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "category"],
-              "query": [
-                { "key": "category", "value": "entertainment" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Category — IPL_2025",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/category?category=IPL_2025&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "category"],
-              "query": [
-                { "key": "category", "value": "IPL_2025" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Category — Not Found (Error Case)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/category?category=nonexistentcategory&limit=5",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "category"],
-              "query": [
-                { "key": "category", "value": "nonexistentcategory" },
-                { "key": "limit", "value": "5" }
-              ]
+      "name": "GET /api/v1/news/category",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/news/category?category=sports&limit={{defaultLimit}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "news",
+            "category"
+          ],
+          "query": [
+            {
+              "key": "category",
+              "value": "sports"
             },
-            "description": "Expected: 404 Not Found."
-          },
-          "response": []
-        }
-      ]
+            {
+              "key": "limit",
+              "value": "{{defaultLimit}}"
+            }
+          ]
+        },
+        "description": "Fetch articles by category, ranked by publication date descending."
+      },
+      "response": []
     },
     {
-      "name": "⭐ Score",
-      "description": "GET /api/v1/news/score\n\nRetrieve articles above a relevance score threshold, ranked highest first.\n\nDefault threshold: 0.7 (range: 0.0–1.0)",
-      "item": [
-        {
-          "name": "Score — Default Threshold (0.7)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/score?limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "score"],
-              "query": [
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Score — High Threshold (0.9)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/score?threshold=0.9&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "score"],
-              "query": [
-                { "key": "threshold", "value": "0.9", "description": "Minimum relevance score" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Score — Very High Threshold (0.95)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/score?threshold=0.95&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "score"],
-              "query": [
-                { "key": "threshold", "value": "0.95" },
-                { "key": "limit", "value": "10" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Score — Invalid Threshold (Error Case)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/score?threshold=1.5&limit=5",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "score"],
-              "query": [
-                { "key": "threshold", "value": "1.5" },
-                { "key": "limit", "value": "5" }
-              ]
+      "name": "GET /api/v1/news/score",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/news/score?threshold=0.7&limit={{defaultLimit}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "news",
+            "score"
+          ],
+          "query": [
+            {
+              "key": "threshold",
+              "value": "0.7"
             },
-            "description": "Expected: 400 Bad Request — threshold must be between 0.0 and 1.0."
-          },
-          "response": []
-        }
-      ]
+            {
+              "key": "limit",
+              "value": "{{defaultLimit}}"
+            }
+          ]
+        },
+        "description": "Fetch articles with relevance_score greater than or equal to threshold."
+      },
+      "response": []
     },
     {
-      "name": "🔍 Search",
-      "description": "GET /api/v1/news/search\n\nFull-text search across article titles and descriptions.\nRanked by combined score: 50% relevance_score + 50% text match score.",
-      "item": [
-        {
-          "name": "Search — IPL 2025",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/search?query=IPL 2025&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "search"],
-              "query": [
-                { "key": "query", "value": "IPL 2025", "description": "Text to search in title and description" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Search — Bangladesh Yunus",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/search?query=Bangladesh Yunus&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "search"],
-              "query": [
-                { "key": "query", "value": "Bangladesh Yunus" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Search — Tesla Elon Musk",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/search?query=Tesla Elon Musk&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "search"],
-              "query": [
-                { "key": "query", "value": "Tesla Elon Musk" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Search — Bengaluru",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/search?query=Bengaluru&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "search"],
-              "query": [
-                { "key": "query", "value": "Bengaluru" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Search — No Results (Error Case)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/search?query=xyznonexistentterm12345&limit=5",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "search"],
-              "query": [
-                { "key": "query", "value": "xyznonexistentterm12345" },
-                { "key": "limit", "value": "5" }
-              ]
+      "name": "GET /api/v1/news/search",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/news/search?query=IPL 2025&limit={{defaultLimit}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "news",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "query",
+              "value": "IPL 2025"
             },
-            "description": "Expected: 404 Not Found."
-          },
-          "response": []
-        }
-      ]
+            {
+              "key": "limit",
+              "value": "{{defaultLimit}}"
+            }
+          ]
+        },
+        "description": "Search article title and description text."
+      },
+      "response": []
     },
     {
-      "name": "📰 Source",
-      "description": "GET /api/v1/news/source\n\nRetrieve articles from a specific news source, ranked by publication date (newest first).\n\nSources in data: Reuters, NDTV, Hindustan Times, ANI News, News18, The Indian Express, PTI, ABP Live, ESPNcricinfo, Free Press Journal, etc.",
-      "item": [
-        {
-          "name": "Source — Reuters",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/source?source=Reuters&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "source"],
-              "query": [
-                { "key": "source", "value": "Reuters", "description": "Source name (case-insensitive)" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Source — NDTV",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/source?source=NDTV&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "source"],
-              "query": [
-                { "key": "source", "value": "NDTV" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Source — Hindustan Times",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/source?source=Hindustan Times&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "source"],
-              "query": [
-                { "key": "source", "value": "Hindustan Times" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Source — ANI News",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/source?source=ANI News&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "source"],
-              "query": [
-                { "key": "source", "value": "ANI News" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Source — The Indian Express",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/source?source=The Indian Express&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "source"],
-              "query": [
-                { "key": "source", "value": "The Indian Express" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Source — Not Found (Error Case)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/source?source=FakeNewsSource&limit=5",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "source"],
-              "query": [
-                { "key": "source", "value": "FakeNewsSource" },
-                { "key": "limit", "value": "5" }
-              ]
+      "name": "GET /api/v1/news/source",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/news/source?source=Reuters&limit={{defaultLimit}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "news",
+            "source"
+          ],
+          "query": [
+            {
+              "key": "source",
+              "value": "Reuters"
             },
-            "description": "Expected: 404 Not Found."
-          },
-          "response": []
-        }
-      ]
+            {
+              "key": "limit",
+              "value": "{{defaultLimit}}"
+            }
+          ]
+        },
+        "description": "Fetch articles from a source, ranked by publication date descending."
+      },
+      "response": []
     },
     {
-      "name": "📍 Nearby",
-      "description": "GET /api/v1/news/nearby\n\nRetrieve articles published near a geographic location using the Haversine formula.\nResults are ranked by distance (closest first).\nResponse includes `distance_km` for each article.",
-      "item": [
-        {
-          "name": "Nearby — Mumbai (50km radius)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/nearby?lat=19.076&lon=72.877&radius=50&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "nearby"],
-              "query": [
-                { "key": "lat", "value": "19.076", "description": "User latitude" },
-                { "key": "lon", "value": "72.877", "description": "User longitude" },
-                { "key": "radius", "value": "50", "description": "Search radius in km" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Nearby — New Delhi (25km radius)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/nearby?lat=28.613&lon=77.209&radius=25&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "nearby"],
-              "query": [
-                { "key": "lat", "value": "28.613" },
-                { "key": "lon", "value": "77.209" },
-                { "key": "radius", "value": "25" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Nearby — Bengaluru (30km radius)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/nearby?lat=12.971&lon=77.594&radius=30&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "nearby"],
-              "query": [
-                { "key": "lat", "value": "12.971" },
-                { "key": "lon", "value": "77.594" },
-                { "key": "radius", "value": "30" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Nearby — Default Radius (10km)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/nearby?lat=19.076&lon=72.877&limit={{defaultLimit}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "nearby"],
-              "query": [
-                { "key": "lat", "value": "19.076" },
-                { "key": "lon", "value": "72.877" },
-                { "key": "limit", "value": "{{defaultLimit}}" }
-              ]
+      "name": "GET /api/v1/news/nearby",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/news/nearby?lat=19.076&lon=72.877&radius=50&limit={{defaultLimit}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "news",
+            "nearby"
+          ],
+          "query": [
+            {
+              "key": "lat",
+              "value": "19.076"
             },
-            "description": "No radius param — defaults to 10km."
-          },
-          "response": []
-        },
-        {
-          "name": "Nearby — Invalid Coordinates (Error Case)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/news/nearby?lat=999&lon=999&radius=10&limit=5",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "news", "nearby"],
-              "query": [
-                { "key": "lat", "value": "999" },
-                { "key": "lon", "value": "999" },
-                { "key": "radius", "value": "10" },
-                { "key": "limit", "value": "5" }
-              ]
+            {
+              "key": "lon",
+              "value": "72.877"
             },
-            "description": "Expected: 400 Bad Request — Invalid coordinates."
-          },
-          "response": []
-        }
-      ]
+            {
+              "key": "radius",
+              "value": "50"
+            },
+            {
+              "key": "limit",
+              "value": "{{defaultLimit}}"
+            }
+          ]
+        },
+        "description": "Fetch articles within radius km of the given latitude/longitude."
+      },
+      "response": []
     },
     {
-      "name": "🔥 Trending (Bonus)",
-      "description": "GET /api/v1/trending\n\nReturns trending articles near the user's location.\n\nTrending Score = SUM[ event_weight × recency_decay ] × geo_proximity_boost\n  - event weights: view=1, click=3, share=5\n  - recency_decay = 1 / (1 + hours_since_event)\n  - geo_proximity_boost = 1 + (1 / (1 + distance_km))\n\nCached per geospatial cluster (2 decimal lat/lon = ~1.1km grid) with 5-min TTL.",
-      "item": [
-        {
-          "name": "Trending — Mumbai",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/trending?lat=19.076&lon=72.877&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "trending"],
-              "query": [
-                { "key": "lat", "value": "19.076", "description": "User latitude" },
-                { "key": "lon", "value": "72.877", "description": "User longitude" },
-                { "key": "limit", "value": "10", "description": "Max results (1–50)" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Trending — Mumbai (Cache Hit Test)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/trending?lat=19.078&lon=72.875&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "trending"],
-              "query": [
-                { "key": "lat", "value": "19.078", "description": "Slightly different coords — maps to same cluster key as above" },
-                { "key": "lon", "value": "72.875" },
-                { "key": "limit", "value": "10" }
-              ]
+      "name": "GET /api/v1/trending",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/trending?lat=19.076&lon=72.877&limit=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "trending"
+          ],
+          "query": [
+            {
+              "key": "lat",
+              "value": "19.076"
             },
-            "description": "lat=19.08, lon=72.88 rounds to the same cache cluster key as the previous request. Should return cached response instantly."
-          },
-          "response": []
-        },
-        {
-          "name": "Trending — New Delhi",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/trending?lat=28.613&lon=77.209&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "trending"],
-              "query": [
-                { "key": "lat", "value": "28.613" },
-                { "key": "lon", "value": "77.209" },
-                { "key": "limit", "value": "10" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Trending — Bengaluru",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/trending?lat=12.971&lon=77.594&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "trending"],
-              "query": [
-                { "key": "lat", "value": "12.971" },
-                { "key": "lon", "value": "77.594" },
-                { "key": "limit", "value": "10" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Trending — Invalid limit (Error Case)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/trending?lat=19.076&lon=72.877&limit=100",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "trending"],
-              "query": [
-                { "key": "lat", "value": "19.076" },
-                { "key": "lon", "value": "72.877" },
-                { "key": "limit", "value": "100" }
-              ]
+            {
+              "key": "lon",
+              "value": "72.877"
             },
-            "description": "Expected: 400 Bad Request — limit must be between 1 and 50."
-          },
-          "response": []
-        }
-      ]
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        },
+        "description": "Bonus endpoint. Fetch location-based trending articles from seeded user event data."
+      },
+      "response": []
     }
   ]
 }
