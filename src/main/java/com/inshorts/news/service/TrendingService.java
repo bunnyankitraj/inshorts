@@ -53,6 +53,7 @@ public class TrendingService {
     @Cacheable(value = "trendingFeed", key = "#cacheKey")
     public List<ArticleResponse> getTrendingByLocation(double lat, double lon, int limit, String cacheKey) {
         log.info("Computing trending feed for cluster key: {} (lat={}, lon={})", cacheKey, lat, lon);
+        int effectiveLimit = Math.min(limit, maxResults);
 
         // Fetch events from last 48 hours
         LocalDateTime since = LocalDateTime.now().minusHours(48);
@@ -61,7 +62,11 @@ public class TrendingService {
         if (recentEvents.isEmpty()) {
             log.warn("No recent user events found. Returning top-scored articles as fallback.");
             return articleRepository.findByScoreAboveThreshold(0.7)
-                .stream().limit(limit).map(newsService::toResponse).collect(Collectors.toList());
+                .stream()
+                .filter(article -> distanceFromUser(article, lat, lon) <= trendingRadiusKm)
+                .limit(effectiveLimit)
+                .map(newsService::toResponse)
+                .collect(Collectors.toList());
         }
 
         // Compute per-article trending scores
@@ -87,12 +92,14 @@ public class TrendingService {
             .map(e -> {
                 Article article = articleMap.get(e.getKey());
                 double baseScore = e.getValue();
-                double geoBoost = computeGeoProximityBoost(article, lat, lon);
+                double distanceKm = distanceFromUser(article, lat, lon);
+                double geoBoost = computeGeoProximityBoost(distanceKm);
                 double trendingScore = baseScore * geoBoost;
-                return new ArticleWithScore(article, trendingScore);
+                return new ArticleWithScore(article, trendingScore, distanceKm);
             })
+            .filter(as -> as.distanceKm() <= trendingRadiusKm)
             .sorted(Comparator.comparingDouble(ArticleWithScore::score).reversed())
-            .limit(limit)
+            .limit(effectiveLimit)
             .map(as -> {
                 ArticleResponse resp = newsService.toResponse(as.article());
                 resp.setRelevanceScore(Math.round(as.score() * 100.0) / 100.0);
@@ -115,16 +122,19 @@ public class TrendingService {
     // Helpers
     // =========================================================================
 
-    private double computeGeoProximityBoost(Article article, double userLat, double userLon) {
+    private double distanceFromUser(Article article, double userLat, double userLon) {
         if (article.getLatitude() == null || article.getLongitude() == null) {
-            return 1.0; // Neutral boost if no coordinates
+            return Double.MAX_VALUE;
         }
-        double distanceKm = newsService.haversineDistance(
+        return newsService.haversineDistance(
             userLat, userLon, article.getLatitude(), article.getLongitude()
         );
+    }
+
+    private double computeGeoProximityBoost(double distanceKm) {
         // Boost: articles close to user get up to 2x multiplier, far ones get ~1x
         return 1.0 + (1.0 / (1.0 + distanceKm));
     }
 
-    private record ArticleWithScore(Article article, double score) {}
+    private record ArticleWithScore(Article article, double score, double distanceKm) {}
 }

@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -97,10 +96,20 @@ public class LLMService {
 
     private String callLLM(String prompt) {
         if ("openai".equalsIgnoreCase(llmProvider)) {
+            if (isMissingApiKey(openaiApiKey, "your-openai-api-key-here")) {
+                throw new IllegalStateException("OpenAI API key is not configured");
+            }
             return callOpenAI(prompt);
-        } else {
-            return callGemini(prompt);
         }
+
+        if (isMissingApiKey(geminiApiKey, "your-gemini-api-key-here")) {
+            throw new IllegalStateException("Gemini API key is not configured");
+        }
+        return callGemini(prompt);
+    }
+
+    private boolean isMissingApiKey(String apiKey, String placeholder) {
+        return apiKey == null || apiKey.isBlank() || placeholder.equals(apiKey);
     }
 
     // =========================================================================
@@ -198,9 +207,9 @@ public class LLMService {
     private String buildQueryAnalysisPrompt(String userQuery) {
         return String.format("""
             You are a news search engine query analyzer. Analyze the following user query and extract structured information.
-            
+
             User Query: "%s"
-            
+
             Instructions:
             1. Extract named entities (people, organizations, locations, companies).
             2. Extract key concepts and topics.
@@ -211,7 +220,7 @@ public class LLMService {
                - "source" → user wants news from a specific source (Reuters, BBC, TechCrunch, etc.)
                - "nearby" → user mentions a location or wants news near a place
             4. Generate a clean search query string from the user's input.
-            
+
             Respond ONLY with valid JSON in this exact format (no markdown, no explanation):
             {
               "entities": ["entity1", "entity2"],

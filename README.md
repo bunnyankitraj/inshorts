@@ -26,6 +26,8 @@ A Spring Boot backend that fetches and organizes news articles from a data sourc
 - Maven 3.9+
 - (Optional) PostgreSQL — only if switching from H2
 
+If multiple JDKs are installed, make sure Maven is using Java 21.
+
 ### 1. Clone & navigate
 ```bash
 cd /path/to/Inshorts
@@ -42,7 +44,7 @@ export OPENAI_API_KEY=your_openai_api_key_here
 
 ### 3. Run the application
 ```bash
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
 The app starts on **`http://localhost:8080`** and automatically:
@@ -83,8 +85,7 @@ src/main/java/com/inshorts/news/
 │   └── ErrorResponse.java          # Consistent error format
 └── exception/
     ├── GlobalExceptionHandler.java  # Centralized error handling
-    ├── NewsNotFoundException.java   # 404 — no articles found
-    └── LLMServiceException.java     # 502 — LLM unavailable
+    └── NewsNotFoundException.java   # 404 — no articles found
 ```
 
 ---
@@ -249,7 +250,7 @@ All endpoints return a consistent structure:
 ```
 
 > `distance_km` is only present in `/nearby` responses.
-> `llm_summary` falls back to a truncated description if LLM API key is not set.
+> `llm_summary` falls back to a truncated description if an LLM API key is not set.
 
 ---
 
@@ -272,7 +273,6 @@ All errors return consistent JSON:
 | Missing required param | `400 Bad Request` |
 | Invalid coordinates / values | `400 Bad Request` |
 | No articles found | `404 Not Found` |
-| LLM API unavailable | `502 Bad Gateway` |
 | Unexpected server error | `500 Internal Server Error` |
 
 ---

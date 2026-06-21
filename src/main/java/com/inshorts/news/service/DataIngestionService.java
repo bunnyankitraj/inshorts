@@ -2,7 +2,6 @@ package com.inshorts.news.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.inshorts.news.model.Article;
 import com.inshorts.news.model.UserEvent;
 import com.inshorts.news.repository.ArticleRepository;
@@ -26,6 +25,7 @@ public class DataIngestionService {
 
     private final ArticleRepository articleRepository;
     private final UserEventRepository userEventRepository;
+    private final ObjectMapper objectMapper;
 
     @Value("${news.data.file-path}")
     private Resource newsDataFile;
@@ -46,10 +46,7 @@ public class DataIngestionService {
      */
     private void ingestArticles() {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.registerModule(new JavaTimeModule());
-
-            List<Map<String, Object>> rawArticles = mapper.readValue(
+            List<Map<String, Object>> rawArticles = objectMapper.readValue(
                 newsDataFile.getInputStream(),
                 new TypeReference<>() {}
             );
@@ -63,7 +60,7 @@ public class DataIngestionService {
                     continue;
                 }
 
-                Article article = mapToArticle(raw, mapper);
+                Article article = mapToArticle(raw);
                 articleRepository.save(article);
                 saved++;
             }
@@ -121,7 +118,7 @@ public class DataIngestionService {
     }
 
     @SuppressWarnings("unchecked")
-    private Article mapToArticle(Map<String, Object> raw, ObjectMapper mapper) {
+    private Article mapToArticle(Map<String, Object> raw) {
         String categoryRaw = "";
         Object catObj = raw.get("category");
         if (catObj instanceof List<?> catList) {

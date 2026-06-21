@@ -52,16 +52,6 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
     }
 
-    @ExceptionHandler(LLMServiceException.class)
-    public ResponseEntity<ErrorResponse> handleLLMFailure(
-            LLMServiceException ex,
-            HttpServletRequest request) {
-        log.error("LLM service error: {}", ex.getMessage());
-        return buildError(HttpStatus.BAD_GATEWAY,
-            "LLM service unavailable. Please try again later.",
-            request.getRequestURI());
-    }
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex,
