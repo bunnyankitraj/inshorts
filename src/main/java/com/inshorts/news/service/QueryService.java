@@ -7,6 +7,7 @@ import com.inshorts.news.dto.QueryRequest;
 import com.inshorts.news.exception.NewsNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,44 +32,45 @@ public class QueryService {
         log.info("Processing natural language query: '{}'", request.getQuery());
 
         int limit = request.getLimit() != null ? request.getLimit() : 5;
+        int page = request.getPage() != null ? request.getPage() : 1;
 
         // Step 1: LLM analysis
         LLMAnalysis analysis = llmService.analyzeQuery(request.getQuery());
         log.info("LLM Analysis — intent: {}, entities: {}", analysis.getIntent(), analysis.getEntities());
 
         // Step 2: Route to correct retrieval strategy
-        List<ArticleResponse> articles = routeToEndpoint(analysis, request, limit);
+        Page<ArticleResponse> result = routeToEndpoint(analysis, request, page, limit);
 
-        if (articles.isEmpty()) {
+        if (result.isEmpty()) {
             throw new NewsNotFoundException(
                 "No articles found for your query: '" + request.getQuery() + "'"
             );
         }
 
         // Step 3: Enrich with LLM summaries (parallel)
-        List<ArticleResponse> enriched = enrichmentService.enrichWithSummaries(articles);
+        List<ArticleResponse> enriched = enrichmentService.enrichWithSummaries(result.getContent());
 
         // Step 4: Build structured response
-        return buildResponse(enriched, analysis, request, request.getQuery());
+        return buildResponse(enriched, result, analysis, request, request.getQuery());
     }
 
     /**
      * Routes to the correct retrieval strategy based on LLM-detected intent.
      * Priority: nearby > source > category > score > search (default)
      */
-    private List<ArticleResponse> routeToEndpoint(LLMAnalysis analysis, QueryRequest request, int limit) {
+    private Page<ArticleResponse> routeToEndpoint(LLMAnalysis analysis, QueryRequest request, int page, int limit) {
         List<String> intent = analysis.getIntent();
 
         if (intent.contains("nearby") && request.getUserLat() != null && request.getUserLon() != null) {
             double radius = request.getRadiusKm() != null ? request.getRadiusKm() : 10.0;
             log.info("Routing to NEARBY — radius={}km", radius);
-            return newsService.getNearby(request.getUserLat(), request.getUserLon(), radius, limit);
+            return newsService.getNearby(request.getUserLat(), request.getUserLon(), radius, page, limit);
         }
 
         if (intent.contains("source") && !analysis.getEntities().isEmpty()) {
             String source = analysis.getEntities().get(0);
             log.info("Routing to SOURCE — source={}", source);
-            return newsService.getBySource(source, limit);
+            return newsService.getBySource(source, page, limit);
         }
 
         if (intent.contains("category")) {
@@ -76,24 +78,26 @@ public class QueryService {
                 ? analysis.getEntities().get(0)
                 : (!analysis.getConcepts().isEmpty() ? analysis.getConcepts().get(0) : "General");
             log.info("Routing to CATEGORY — category={}", category);
-            return newsService.getByCategory(category, limit);
+            return newsService.getByCategory(category, page, limit);
         }
 
         if (intent.contains("score")) {
             log.info("Routing to SCORE");
-            return newsService.getByScore(0.7, limit);
+            return newsService.getByScore(0.7, page, limit);
         }
 
         log.info("Routing to SEARCH — query={}", analysis.getSearchQuery());
-        return newsService.getBySearch(analysis.getSearchQuery(), limit);
+        return newsService.getBySearch(analysis.getSearchQuery(), page, limit);
     }
 
-    private NewsApiResponse buildResponse(List<ArticleResponse> articles, LLMAnalysis analysis,
+    private NewsApiResponse buildResponse(List<ArticleResponse> articles, Page<?> result, LLMAnalysis analysis,
                                           QueryRequest request, String originalQuery) {
         return NewsApiResponse.builder()
             .metadata(NewsApiResponse.Metadata.builder()
-                .totalResults(articles.size())
-                .page(1)
+                .totalResults(result.getTotalElements())
+                .page(result.getNumber() + 1)
+                .pageSize(result.getSize())
+                .totalPages(result.getTotalPages())
                 .queryUsed(originalQuery)
                 .intent(analysis.getIntent())
                 .entities(analysis.getEntities())

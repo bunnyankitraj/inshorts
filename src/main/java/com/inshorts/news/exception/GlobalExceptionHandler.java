@@ -24,6 +24,26 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
     }
 
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParam(
+            MissingServletRequestParameterException ex,
+            HttpServletRequest request) {
+        log.warn("Missing parameter: {}", ex.getParameterName());
+        return buildError(HttpStatus.BAD_REQUEST,
+            "Missing required parameter: " + ex.getParameterName(),
+            request.getRequestURI());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex,
+            HttpServletRequest request) {
+        log.warn("Type mismatch for parameter: {}", ex.getName());
+        return buildError(HttpStatus.BAD_REQUEST,
+            "Invalid value for parameter '" + ex.getName() + "': " + ex.getValue(),
+            request.getRequestURI());
+    }
+
     @ExceptionHandler(NewsNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNewsNotFound(
             NewsNotFoundException ex,

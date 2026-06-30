@@ -3,6 +3,7 @@ package com.inshorts.news.util;
 import com.inshorts.news.exception.NewsNotFoundException;
 import com.inshorts.news.dto.ArticleResponse;
 import com.inshorts.news.dto.NewsApiResponse;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -17,6 +18,12 @@ public class NewsRequestValidator {
     public static void validateLimit(int limit) {
         if (limit < 1 || limit > 50) {
             throw new IllegalArgumentException("limit must be between 1 and 50");
+        }
+    }
+
+    public static void validatePage(int page) {
+        if (page < 1) {
+            throw new IllegalArgumentException("page must be >= 1");
         }
     }
 
@@ -40,6 +47,9 @@ public class NewsRequestValidator {
         }
     }
 
+    /**
+     * Single-page response (e.g. trending) — no underlying pagination.
+     */
     public static NewsApiResponse buildResponse(
             List<ArticleResponse> articles,
             String endpoint,
@@ -50,6 +60,35 @@ public class NewsRequestValidator {
             .metadata(NewsApiResponse.Metadata.builder()
                 .totalResults(articles.size())
                 .page(1)
+                .pageSize(articles.size())
+                .totalPages(1)
+                .queryUsed(queryUsed)
+                .intent(intent)
+                .entities(entities)
+                .endpoint(endpoint)
+                .build())
+            .articles(articles)
+            .build();
+    }
+
+    /**
+     * Paginated response — page number, page size, total results and total pages
+     * are taken from the {@link Page}. The articles list is passed separately so the
+     * caller can enrich the page content (LLM summaries) before responding.
+     */
+    public static NewsApiResponse buildResponse(
+            List<ArticleResponse> articles,
+            Page<?> page,
+            String endpoint,
+            List<String> intent,
+            List<String> entities,
+            String queryUsed) {
+        return NewsApiResponse.builder()
+            .metadata(NewsApiResponse.Metadata.builder()
+                .totalResults(page.getTotalElements())
+                .page(page.getNumber() + 1)
+                .pageSize(page.getSize())
+                .totalPages(page.getTotalPages())
                 .queryUsed(queryUsed)
                 .intent(intent)
                 .entities(entities)

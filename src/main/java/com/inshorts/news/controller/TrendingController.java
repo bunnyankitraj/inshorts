@@ -2,7 +2,6 @@ package com.inshorts.news.controller;
 
 import com.inshorts.news.dto.ArticleResponse;
 import com.inshorts.news.dto.NewsApiResponse;
-import com.inshorts.news.service.EnrichmentService;
 import com.inshorts.news.service.TrendingService;
 import com.inshorts.news.util.NewsRequestValidator;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +14,8 @@ import java.util.List;
  * GET /api/v1/trending
  *
  * Returns trending articles near the user's location.
- * Caching and scoring logic is fully handled by TrendingService.
+ * Caching, scoring, and LLM enrichment are fully handled by TrendingService
+ * (enrichment runs inside the cached method, so cache hits are LLM-free).
  */
 @RestController
 @RequestMapping("/api/v1/trending")
@@ -23,7 +23,6 @@ import java.util.List;
 public class TrendingController {
 
     private final TrendingService trendingService;
-    private final EnrichmentService enrichmentService;
 
     @GetMapping
     public ResponseEntity<NewsApiResponse> getTrending(
@@ -36,9 +35,8 @@ public class TrendingController {
 
         String cacheKey = trendingService.buildCacheKey(lat, lon);
 
-        List<ArticleResponse> articles = enrichmentService.enrichWithSummaries(
-            trendingService.getTrendingByLocation(lat, lon, limit, cacheKey)
-        );
+        List<ArticleResponse> articles =
+            trendingService.getTrendingByLocation(lat, lon, limit, cacheKey);
 
         NewsRequestValidator.requireNonEmpty(articles,
             String.format("No trending articles found near (%.4f, %.4f)", lat, lon));

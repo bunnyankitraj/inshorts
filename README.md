@@ -245,11 +245,17 @@ places (~1.1km grid) — with a **5-minute TTL** via Caffeine.
 
 All endpoints return the same envelope:
 
+All list endpoints accept **pagination** params: `page` (1-based, default `1`) and
+`limit` (page size, 1–50, default `5`). For `POST /query`, pass `page`/`limit` in the body.
+Metadata reports `totalResults` (total matches across all pages), `page`, `pageSize`, and `totalPages`.
+
 ```json
 {
   "metadata": {
-    "totalResults": 5,
+    "totalResults": 312,
     "page": 1,
+    "pageSize": 5,
+    "totalPages": 63,
     "queryUsed": "sports",
     "intent": ["category"],
     "entities": ["sports"],

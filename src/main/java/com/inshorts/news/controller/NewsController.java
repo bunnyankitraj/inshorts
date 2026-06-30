@@ -7,6 +7,7 @@ import com.inshorts.news.service.NewsService;
 import com.inshorts.news.util.NewsRequestValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,10 @@ import java.util.List;
 /**
  * Direct news retrieval endpoints.
  * All validation, response building, and business logic lives in service/util layers.
+ *
+ * Common query params:
+ *   page  — 1-based page number (default 1)
+ *   limit — page size, 1..50 (default 5)
  *
  * GET /api/v1/news/category
  * GET /api/v1/news/score
@@ -34,76 +39,80 @@ public class NewsController {
     @GetMapping("/category")
     public ResponseEntity<NewsApiResponse> getByCategory(
             @RequestParam String category,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "5") int limit) {
 
+        NewsRequestValidator.validatePage(page);
         NewsRequestValidator.validateLimit(limit);
 
-        List<ArticleResponse> articles = enrichmentService.enrichWithSummaries(
-            newsService.getByCategory(category, limit)
-        );
+        Page<ArticleResponse> result = newsService.getByCategory(category, page, limit);
+        List<ArticleResponse> articles = enrichmentService.enrichWithSummaries(result.getContent());
 
         NewsRequestValidator.requireNonEmpty(articles, "No articles found for category: " + category);
 
         return ResponseEntity.ok(
-            NewsRequestValidator.buildResponse(articles, "category", List.of("category"), List.of(category), category)
+            NewsRequestValidator.buildResponse(articles, result, "category", List.of("category"), List.of(category), category)
         );
     }
 
     @GetMapping("/score")
     public ResponseEntity<NewsApiResponse> getByScore(
             @RequestParam(defaultValue = "0.7") double threshold,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "5") int limit) {
 
         NewsRequestValidator.validateThreshold(threshold);
+        NewsRequestValidator.validatePage(page);
         NewsRequestValidator.validateLimit(limit);
 
-        List<ArticleResponse> articles = enrichmentService.enrichWithSummaries(
-            newsService.getByScore(threshold, limit)
-        );
+        Page<ArticleResponse> result = newsService.getByScore(threshold, page, limit);
+        List<ArticleResponse> articles = enrichmentService.enrichWithSummaries(result.getContent());
 
         NewsRequestValidator.requireNonEmpty(articles, "No articles found with score above: " + threshold);
 
         return ResponseEntity.ok(
-            NewsRequestValidator.buildResponse(articles, "score", List.of("score"), List.of(), "relevance >= " + threshold)
+            NewsRequestValidator.buildResponse(articles, result, "score", List.of("score"), List.of(), "relevance >= " + threshold)
         );
     }
 
     @GetMapping("/search")
     public ResponseEntity<NewsApiResponse> searchArticles(
             @RequestParam String query,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "5") int limit) {
 
         if (query == null || query.isBlank()) {
             throw new IllegalArgumentException("Query parameter must not be empty");
         }
+        NewsRequestValidator.validatePage(page);
         NewsRequestValidator.validateLimit(limit);
 
-        List<ArticleResponse> articles = enrichmentService.enrichWithSummaries(
-            newsService.getBySearch(query, limit)
-        );
+        Page<ArticleResponse> result = newsService.getBySearch(query, page, limit);
+        List<ArticleResponse> articles = enrichmentService.enrichWithSummaries(result.getContent());
 
         NewsRequestValidator.requireNonEmpty(articles, "No articles found matching: " + query);
 
         return ResponseEntity.ok(
-            NewsRequestValidator.buildResponse(articles, "search", List.of("search"), List.of(), query)
+            NewsRequestValidator.buildResponse(articles, result, "search", List.of("search"), List.of(), query)
         );
     }
 
     @GetMapping("/source")
     public ResponseEntity<NewsApiResponse> getBySource(
             @RequestParam String source,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "5") int limit) {
 
+        NewsRequestValidator.validatePage(page);
         NewsRequestValidator.validateLimit(limit);
 
-        List<ArticleResponse> articles = enrichmentService.enrichWithSummaries(
-            newsService.getBySource(source, limit)
-        );
+        Page<ArticleResponse> result = newsService.getBySource(source, page, limit);
+        List<ArticleResponse> articles = enrichmentService.enrichWithSummaries(result.getContent());
 
         NewsRequestValidator.requireNonEmpty(articles, "No articles found from source: " + source);
 
         return ResponseEntity.ok(
-            NewsRequestValidator.buildResponse(articles, "source", List.of("source"), List.of(source), source)
+            NewsRequestValidator.buildResponse(articles, result, "source", List.of("source"), List.of(source), source)
         );
     }
 
@@ -112,20 +121,21 @@ public class NewsController {
             @RequestParam double lat,
             @RequestParam double lon,
             @RequestParam(defaultValue = "10") double radius,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "5") int limit) {
 
         NewsRequestValidator.validateCoordinates(lat, lon);
+        NewsRequestValidator.validatePage(page);
         NewsRequestValidator.validateLimit(limit);
 
-        List<ArticleResponse> articles = enrichmentService.enrichWithSummaries(
-            newsService.getNearby(lat, lon, radius, limit)
-        );
+        Page<ArticleResponse> result = newsService.getNearby(lat, lon, radius, page, limit);
+        List<ArticleResponse> articles = enrichmentService.enrichWithSummaries(result.getContent());
 
         NewsRequestValidator.requireNonEmpty(articles,
             String.format("No articles found within %.1fkm of (%.4f, %.4f)", radius, lat, lon));
 
         return ResponseEntity.ok(
-            NewsRequestValidator.buildResponse(articles, "nearby", List.of("nearby"), List.of(),
+            NewsRequestValidator.buildResponse(articles, result, "nearby", List.of("nearby"), List.of(),
                 String.format("lat=%.4f, lon=%.4f, radius=%.1fkm", lat, lon, radius))
         );
     }

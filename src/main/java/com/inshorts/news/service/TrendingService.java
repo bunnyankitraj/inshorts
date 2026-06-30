@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -24,6 +25,7 @@ public class TrendingService {
     private final UserEventRepository userEventRepository;
     private final ArticleRepository articleRepository;
     private final NewsService newsService;
+    private final EnrichmentService enrichmentService;
 
     @Value("${trending.radius.km:50}")
     private double trendingRadiusKm;
@@ -52,13 +54,25 @@ public class TrendingService {
         log.info("Computing trending feed for cluster key: {} (lat={}, lon={})", cacheKey, lat, lon);
         int effectiveLimit = Math.min(limit, maxResults);
 
+        // 1 M -> user
+        // no of event generated
+        // 10 M
+
+
+
+
+
         // Fetch events from last 48 hours
+        //banglore -> lat && long +- 30 KM
+        //2000 key -> id,view/share/click,time
         LocalDateTime since = LocalDateTime.now().minusHours(48);
         List<UserEvent> recentEvents = userEventRepository.findRecentEvents(since);
 
         if (recentEvents.isEmpty()) {
             log.warn("No recent user events found. Returning top-scored articles as fallback.");
-            return articleRepository.findByScoreAboveThreshold(0.7)
+            List<ArticleResponse> fallback = articleRepository
+                .findByScoreAboveThreshold(0.7, PageRequest.of(0, 200))
+                .getContent()
                 .stream()
                 .filter(article -> distanceFromUser(article, lat, lon) <= trendingRadiusKm)
                 .limit(effectiveLimit)
@@ -69,6 +83,8 @@ public class TrendingService {
                     return resp;
                 })
                 .collect(Collectors.toList());
+            // Enrich inside the cached method so a cache hit never re-pays for LLM calls.
+            return enrichmentService.enrichWithSummaries(fallback);
         }
 
         // Compute per-article trending scores
@@ -91,17 +107,17 @@ public class TrendingService {
         Map<String, Article> articleMap = allArticles.stream()
             .collect(Collectors.toMap(Article::getId, a -> a));
 
-        return articleScores.entrySet().stream()
+        List<ArticleResponse> trending = articleScores.entrySet().stream()
             .filter(e -> articleMap.containsKey(e.getKey()))
             .map(e -> {
                 Article article = articleMap.get(e.getKey());
                 double score = e.getValue();
                 double distanceKm = distanceFromUser(article, lat, lon);
-                
+
                 // Factor 3: Geographical relevance (Simple bonus: +5 if very close)
                 if (distanceKm <= 10.0) score += 5.0;
                 else if (distanceKm <= 30.0) score += 2.0;
-                
+
                 return new ArticleWithScore(article, score, distanceKm);
             })
             .filter(as -> as.distanceKm() <= trendingRadiusKm)
@@ -114,12 +130,16 @@ public class TrendingService {
                 return resp;
             })
             .collect(Collectors.toList());
+
+        // Enrich inside the cached method so a cache hit never re-pays for LLM calls.
+        return enrichmentService.enrichWithSummaries(trending);
     }
 
     /**
      * Generates a stable cache key based on location rounded to 2 decimal places.
      * This groups nearby users into geographic clusters (~1.1km grid cells).
      */
+//    43.534782 -> 43.53 43.534782 -> 43.53
     public String buildCacheKey(double lat, double lon) {
         double roundedLat = Math.round(lat * 100.0) / 100.0;
         double roundedLon = Math.round(lon * 100.0) / 100.0;

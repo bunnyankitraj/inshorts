@@ -18,8 +18,10 @@ public class NewsApiResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Metadata {
-        private int totalResults;
+        private long totalResults;
         private int page;
+        private int pageSize;
+        private int totalPages;
         private String queryUsed;
         private List<String> intent;
         private List<String> entities;

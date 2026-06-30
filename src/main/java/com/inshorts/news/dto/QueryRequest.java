@@ -23,7 +23,12 @@ public class QueryRequest {
     private Double radiusKm;
 
     /**
-     * Max results to return (default: 5).
+     * Max results per page (default: 5).
      */
     private Integer limit = 5;
+
+    /**
+     * 1-based page number (default: 1).
+     */
+    private Integer page = 1;
 }

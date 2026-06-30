@@ -1,14 +1,19 @@
 {
   "info": {
     "name": "Inshorts News Retrieval API",
-    "description": "Minimal Postman collection for the APIs implemented in this Spring Boot project.\n\nBase URL: http://localhost:8080\n\nSetup:\n1. Start the app: JAVA_HOME=$(/usr/libexec/java_home -v 21) mvn spring-boot:run\n2. Optional: put GEMINI_API_KEY in .env for Gemini summaries and query analysis.\n\nThis collection intentionally includes only one request per implemented controller endpoint.",
+    "description": "Postman collection for the APIs implemented in this Spring Boot project.\n\nBase URL: http://localhost:8080\n\nSetup:\n1. Start the app: JAVA_HOME=$(/usr/libexec/java_home -v 21) mvn spring-boot:run\n2. Optional: put OPENAI_API_KEY in .env for OpenAI-generated summaries and query analysis. Without it, summaries fall back to a truncated description and /query falls back to a plain text search.\n\nPagination: every list endpoint accepts `page` (1-based, default 1) and `limit` (page size, 1-50, default 5). For POST /query, pass `page`/`limit` in the body. Response metadata reports `totalResults`, `page`, `pageSize`, and `totalPages`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_postman_id": "inshorts-news-api-minimal-v1"
+    "_postman_id": "inshorts-news-api-v2"
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "defaultPage",
+      "value": "1",
       "type": "string"
     },
     {
@@ -30,7 +35,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"query\": \"Latest developments near Mumbai\",\n  \"userLat\": 19.0760,\n  \"userLon\": 72.8777,\n  \"radiusKm\": 50,\n  \"limit\": 5\n}",
+          "raw": "{\n  \"query\": \"Latest developments near Mumbai\",\n  \"userLat\": 19.0760,\n  \"userLon\": 72.8777,\n  \"radiusKm\": 50,\n  \"page\": 1,\n  \"limit\": 5\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -48,7 +53,7 @@
             "query"
           ]
         },
-        "description": "Natural language query endpoint. Uses Gemini when GEMINI_API_KEY is configured; otherwise falls back to simple routing/search behavior."
+        "description": "Natural language query endpoint. Uses OpenAI (gpt-4o-mini) when OPENAI_API_KEY is configured to extract entities + intent and route to a retrieval strategy; otherwise falls back to a plain text search. Supports `page`/`limit` in the body for pagination."
       },
       "response": []
     },
@@ -58,7 +63,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/news/category?category=sports&limit={{defaultLimit}}",
+          "raw": "{{baseUrl}}/api/v1/news/category?category=sports&page={{defaultPage}}&limit={{defaultLimit}}",
           "host": [
             "{{baseUrl}}"
           ],
@@ -74,12 +79,16 @@
               "value": "sports"
             },
             {
+              "key": "page",
+              "value": "{{defaultPage}}"
+            },
+            {
               "key": "limit",
               "value": "{{defaultLimit}}"
             }
           ]
         },
-        "description": "Fetch articles by category, ranked by publication date descending."
+        "description": "Fetch articles by category, ranked by publication date descending. Paginated (page/limit). Try page=2 to see the next page."
       },
       "response": []
     },
@@ -89,7 +98,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/news/score?threshold=0.7&limit={{defaultLimit}}",
+          "raw": "{{baseUrl}}/api/v1/news/score?threshold=0.7&page={{defaultPage}}&limit={{defaultLimit}}",
           "host": [
             "{{baseUrl}}"
           ],
@@ -105,12 +114,16 @@
               "value": "0.7"
             },
             {
+              "key": "page",
+              "value": "{{defaultPage}}"
+            },
+            {
               "key": "limit",
               "value": "{{defaultLimit}}"
             }
           ]
         },
-        "description": "Fetch articles with relevance_score greater than or equal to threshold."
+        "description": "Fetch articles with relevance_score greater than or equal to threshold, ranked by score descending. Paginated (page/limit)."
       },
       "response": []
     },
@@ -120,7 +133,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/news/search?query=IPL 2025&limit={{defaultLimit}}",
+          "raw": "{{baseUrl}}/api/v1/news/search?query=IPL 2025&page={{defaultPage}}&limit={{defaultLimit}}",
           "host": [
             "{{baseUrl}}"
           ],
@@ -136,12 +149,16 @@
               "value": "IPL 2025"
             },
             {
+              "key": "page",
+              "value": "{{defaultPage}}"
+            },
+            {
               "key": "limit",
               "value": "{{defaultLimit}}"
             }
           ]
         },
-        "description": "Search article title and description text."
+        "description": "Search article title and description text, ranked by a blend of relevance_score and text match. Paginated over a capped candidate set (news.search.candidate-cap)."
       },
       "response": []
     },
@@ -151,7 +168,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/news/source?source=Reuters&limit={{defaultLimit}}",
+          "raw": "{{baseUrl}}/api/v1/news/source?source=Reuters&page={{defaultPage}}&limit={{defaultLimit}}",
           "host": [
             "{{baseUrl}}"
           ],
@@ -167,12 +184,16 @@
               "value": "Reuters"
             },
             {
+              "key": "page",
+              "value": "{{defaultPage}}"
+            },
+            {
               "key": "limit",
               "value": "{{defaultLimit}}"
             }
           ]
         },
-        "description": "Fetch articles from a source, ranked by publication date descending."
+        "description": "Fetch articles from a source (exact, case-insensitive), ranked by publication date descending. Paginated (page/limit)."
       },
       "response": []
     },
@@ -182,7 +203,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/news/nearby?lat=19.076&lon=72.877&radius=50&limit={{defaultLimit}}",
+          "raw": "{{baseUrl}}/api/v1/news/nearby?lat=19.076&lon=72.877&radius=50&page={{defaultPage}}&limit={{defaultLimit}}",
           "host": [
             "{{baseUrl}}"
           ],
@@ -206,12 +227,16 @@
               "value": "50"
             },
             {
+              "key": "page",
+              "value": "{{defaultPage}}"
+            },
+            {
               "key": "limit",
               "value": "{{defaultLimit}}"
             }
           ]
         },
-        "description": "Fetch articles within radius km of the given latitude/longitude."
+        "description": "Fetch articles within radius km of the given latitude/longitude, ranked by distance (closest first). Each article includes distance_km. Paginated (page/limit)."
       },
       "response": []
     },
@@ -245,7 +270,7 @@
             }
           ]
         },
-        "description": "Bonus endpoint. Fetch location-based trending articles from seeded user event data."
+        "description": "Bonus endpoint. Location-based trending feed from seeded user event data, cached per geo-cluster (5-min TTL). Returns a single capped feed (no page param)."
       },
       "response": []
     }

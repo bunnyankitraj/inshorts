@@ -31,6 +31,9 @@ public class LLMService {
     @Value("${llm.openai.base-url}")
     private String openaiBaseUrl;
 
+    @Value("${llm.http.block-timeout-ms:25000}")
+    private long blockTimeoutMs;
+
     public LLMService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
         this.webClient = webClientBuilder.build();
         this.objectMapper = objectMapper;
@@ -119,7 +122,7 @@ public class LLMService {
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(String.class)
-                .block();
+                .block(java.time.Duration.ofMillis(blockTimeoutMs));
 
             return extractOpenAIText(responseBody);
         } catch (WebClientResponseException e) {
