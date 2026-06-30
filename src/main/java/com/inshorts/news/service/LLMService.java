@@ -178,8 +178,21 @@ public class LLMService {
                - "score" → user wants highly relevant/top-ranked articles
                - "search" → user wants to search by keywords or topic
                - "source" → user wants news from a specific source (Reuters, BBC, TechCrunch, etc.)
-               - "nearby" → user mentions a location or wants news near a place
+               - "nearby" → user mentions a location/place or wants news near somewhere
             4. Generate a clean search query string from the user's input.
+
+            Intent selection rules:
+            - If the query refers to ANY location or place (e.g. "near Palo Alto", "in Mumbai",
+              "around me"), the intent MUST be exactly ["nearby"] and nothing else. The topic
+              words still go into "entities"/"concepts", but the intent stays ["nearby"].
+            - Only when there is NO location should you use other intents, and you may combine
+              them (e.g. ["category", "source"]).
+
+            Examples:
+            - Query: "Latest developments in the Elon Musk Twitter acquisition near Palo Alto"
+              → {"entities":["Elon Musk","Twitter","Palo Alto"],"concepts":["acquisition"],"intent":["nearby"],"searchQuery":"Elon Musk Twitter acquisition"}
+            - Query: "Top technology news from the New York Times"
+              → {"entities":["New York Times"],"concepts":["technology"],"intent":["category","source"],"searchQuery":"technology news"}
 
             Respond ONLY with valid JSON in this exact format (no markdown, no explanation):
             {
